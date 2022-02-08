@@ -4,6 +4,8 @@ import pyudev
 import psutil
 from tinydb import TinyDB, Query
 
+from rospy import sleep
+
 db = TinyDB("db.json")
 def check(dir):
   # assign directory
@@ -36,17 +38,22 @@ def check(dir):
           hashed_file.update(read_file)
           results = db.search(File.hash == hashed_file.hexdigest())
           if results:
-              print("virus in", filename) 
-
+              print("Threat detected in file: " + filename)
+              os.remove(f)
+              print("malicious file removed")
+         
 
 context = pyudev.Context()
-while True:
-    monitor = pyudev.Monitor.from_netlink(context)
-    monitor.filter_by('usb')
-    monitor.start()
-    for device in iter(monitor.poll, None):
-        if device.action == 'add':
+
+monitor = pyudev.Monitor.from_netlink(context)
+monitor.filter_by('usb')
+monitor.start()
+for device in iter(monitor.poll, None):
+    if device.action == 'add':
+        flag = True
+        while flag :   
             for p in psutil.disk_partitions(False):
                 if 'media' in p.mountpoint:
-                    print(p.mountpoint)
+                    print (p.mountpoint)
                     check(p.mountpoint)
+                    flag = False
