@@ -12,7 +12,7 @@ def check(dir):
   directory = dir
 
   File = Query()
-
+  error = False
   # iterate over files in
   # that directory
   for filename in os.listdir(directory):
@@ -39,9 +39,19 @@ def check(dir):
           results = db.search(File.hash == hashed_file.hexdigest())
           if results:
               print("Threat detected in file: " + filename)
-              os.remove(f)
-              print("malicious file removed")
-         
+              while True:
+                answer = input("Do you want to remove the malicious file " + filename + "? Y/N\n")
+                if answer.lower() == 'y':
+                    os.remove(f)
+                    print("malicious file removed")
+                    break
+                elif answer.lower() == 'n':  
+                    error = True
+                    break
+                else:
+                    print("Wrong input")
+  return error        
+            
 
 context = pyudev.Context()
 
@@ -55,5 +65,9 @@ for device in iter(monitor.poll, None):
             for p in psutil.disk_partitions(False):
                 if 'media' in p.mountpoint:
                     print (p.mountpoint)
-                    check(p.mountpoint)
+                    error = check(p.mountpoint)
                     flag = False
+                    if error :
+                        cmd = "eject " + p.mountpoint 
+                        os.system(cmd) 
+                        print("Device was successfully ejected ")
