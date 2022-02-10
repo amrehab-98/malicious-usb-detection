@@ -7,6 +7,18 @@ from tinydb import TinyDB, Query
 from rospy import sleep
 
 db = TinyDB("db.json")
+def listToString(s): 
+
+    # initialize an empty string
+    str1 = "" 
+
+    # traverse in the string
+    for ele in s: 
+        str1 += ele
+
+    # return string
+    return str1
+
 def check(dir):
   # assign directory
   directory = dir
@@ -27,15 +39,17 @@ def check(dir):
           # remove spaces
           lines = [line.replace(' ', '') for line in lines]
           lines = [line.lower() for line in lines]
+          file_str = listToString(lines)
 
           # finally, write lines in the file
-          with open(f, 'w') as fi:
-              fi.writelines(lines)
+        #   with open(f, 'w') as fi:
+        #       fi.writelines(lines)
 
-          open_file = open(f, "rb")
-          read_file = open_file.read()
+        #   open_file = open(f, "rb")
+        #   read_file = open_file.read()
           hashed_file = hashlib.sha256()
-          hashed_file.update(read_file)
+        #   hashed_file.update(read_file)
+          hashed_file.update(file_str.encode())
           results = db.search(File.hash == hashed_file.hexdigest())
           if results:
               print("Threat detected in file: " + filename)
