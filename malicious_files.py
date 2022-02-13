@@ -6,24 +6,24 @@ db = TinyDB("db.json")
 
 directory = './hash_compare/'
 
-for filename in os.listdir(directory):
-    f = os.path.join(directory, filename)
-    # checking if it is a file
-    if os.path.isfile(f):
-        # first get all lines from file
-        with open(f, 'r') as fi:
-            lines = fi.readlines()
+File = Query()
+def update_db(directory):
+    '''
+    This functions is responsible for adding malicious files hashes to the database.
 
-        # remove spaces
-        lines = [line.replace(' ', '') for line in lines]
-        lines = [line.lower() for line in lines]
+    Parameters:
+    directory: Path of the directory that contains malicious files.
+    '''
 
-        # finally, write lines in the file
-        with open(f, 'w') as fi:
-            fi.writelines(lines)
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            with open(os.path.join(root, file), 'rb') as data:
+                hashed_file = hashlib.sha256()
+                for byte_block in iter(lambda: data.read(4096),b""):
+                    hashed_file.update(byte_block)
 
-        file = open(f, "rb")
-        read_file = file.read()
-        hashed_file = hashlib.sha256()
-        hashed_file.update(read_file)
-        db.insert({'hash':hashed_file.hexdigest()})
+            results = db.search(File.hash == hashed_file.hexdigest()) 
+            if not results:       
+                db.insert({'hash':hashed_file.hexdigest()})
+
+update_db(directory)

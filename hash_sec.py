@@ -4,84 +4,113 @@ import pyudev
 import psutil
 from tinydb import TinyDB, Query
 
-from rospy import sleep
-
 db = TinyDB("db.json")
-def listToString(s): 
-
-    # initialize an empty string
-    str1 = "" 
-
-    # traverse in the string
-    for ele in s: 
-        str1 += ele
-
-    # return string
-    return str1
 
 def check(dir):
-  # assign directory
-  directory = dir
+    '''
+    This function is responsible to find malicious files.
 
-  File = Query()
-  error = False
-  # iterate over files in
-  # that directory
-  for filename in os.listdir(directory):
-      f = os.path.join(directory, filename)
-      # checking if it is a file
-      if os.path.isfile(f):
+    Parameters:
+    dir: Directory of the file.
 
-          # first get all lines from file
-          with open(f, 'r') as fi:
-              lines = fi.readlines()
+    Returns:
+    error: A boolean value that is set to true if the user doesn't want to remove the file.
 
-          # remove spaces
-          lines = [line.replace(' ', '') for line in lines]
-          lines = [line.lower() for line in lines]
-          file_str = listToString(lines)
+    '''
 
-          # finally, write lines in the file
-        #   with open(f, 'w') as fi:
-        #       fi.writelines(lines)
+    directory = dir
 
-        #   open_file = open(f, "rb")
-        #   read_file = open_file.read()
-          hashed_file = hashlib.sha256()
-        #   hashed_file.update(read_file)
-          hashed_file.update(file_str.encode())
-          results = db.search(File.hash == hashed_file.hexdigest())
-          if results:
-              print("Threat detected in file: " + filename)
-              while True:
-                answer = input("Do you want to remove the malicious file " + filename + "? Y/N\n")
-                if answer.lower() == 'y':
-                    os.remove(f)
-                    print("malicious file removed")
-                    break
-                elif answer.lower() == 'n':  
-                    error = True
-                    break
-                else:
-                    print("Wrong input")
-  return error        
-            
+    File = Query()
+    error = False
+    # iterate over files in all directories
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            hashed_file = hash_file(os.path.join(root, file))
+            results = db.search(File.hash == hashed_file)
+            if results:
+                error = take_action(os.path.join(root, file), file)
+                if error:
+                    return error
+    return error
 
-context = pyudev.Context()
+def take_action(dir, file):
+    '''
+    This function lets the user choose whether to remove the malicious file or to eject usb.
 
-monitor = pyudev.Monitor.from_netlink(context)
-monitor.filter_by('usb')
-monitor.start()
-for device in iter(monitor.poll, None):
-    if device.action == 'add':
-        flag = True
-        while flag :   
-            for p in psutil.disk_partitions(False):
-                if 'media' in p.mountpoint:
-                    print (p.mountpoint)
-                    error = check(p.mountpoint)
-                    flag = False
-                    if error :
-                        cmd = "eject " + p.mountpoint 
-                        os.system(cmd) 
-                        print("Device was successfully ejected ")
+    Parameters:
+    dir: Directory of the file.
+    file: File name.
+
+    Returns:
+    error: A boolean value that is set to true if the user doesn't want to remove the file.
+
+    '''
+
+    print("Threat detected in file: " + file)
+    while True:
+        answer = input(
+            "Do you want to remove the malicious file " + file + "? Y/N\n")
+        if answer.lower() == 'y':
+            os.remove(dir)
+            print("malicious file removed")
+            error = False
+            return error
+        elif answer.lower() == 'n':
+            error = True
+            return error
+        else:
+            print("Wrong input")
+
+def hash_file(dir):
+    '''
+    This function is responsible for hashing files.
+
+    Parameter:
+    dir: Directory of file to be hashed.
+
+    Returns:
+    hashed_file.hexadigest(): The hexadecimal string of the file hash.
+
+    '''
+
+    hashed_file = hashlib.sha256()
+    with open(dir, 'rb') as data:
+        for byte_block in iter(lambda: data.read(4096),b""):
+            hashed_file.update(byte_block)
+    return hashed_file.hexdigest()
+
+def usb_insertion_monitor():
+    '''This function is responsible for detecting when a usb is inserted.'''
+
+    context = pyudev.Context()
+
+    monitor = pyudev.Monitor.from_netlink(context)
+    monitor.filter_by('usb')
+    monitor.start()
+    for device in iter(monitor.poll, None):
+        if device.action == 'add':
+            flag = True
+            while flag:
+                for p in psutil.disk_partitions(False):
+                    if 'media' in p.mountpoint:
+                        print(p.mountpoint)
+                        # Checks if the usb is safe
+                        error = check(p.mountpoint)
+                        flag = False
+                        if error:
+                            eject_usb(p.mountpoint)
+
+def eject_usb(mountpoint):
+    '''
+    This function ejects the usb from the computer.
+    
+    Parameters:
+    mountpoint: Path where the usb is mounted
+
+    '''
+
+    cmd = "eject " + mountpoint
+    os.system(cmd)
+    print("Device was successfully ejected ")
+
+usb_insertion_monitor()
