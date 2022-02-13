@@ -1,10 +1,16 @@
+from cmath import log
 import hashlib
 import os
 import pyudev
 import psutil
 from tinydb import TinyDB, Query
+import logging
 
 db = TinyDB("db.json")
+
+logging.basicConfig(filename='info.log',
+                    format='%(levelname)s %(asctime)s :: %(message)s',
+                    level=logging.INFO)
 
 def check(dir):
     '''
@@ -28,6 +34,7 @@ def check(dir):
             hashed_file = hash_file(os.path.join(root, file))
             results = db.search(File.hash == hashed_file)
             if results:
+                logging.info('Malicious file found (' + file + ').')
                 error = take_action(os.path.join(root, file), file)
                 if error:
                     return error
@@ -50,8 +57,10 @@ def take_action(dir, file):
     while True:
         answer = input(
             "Do you want to remove the malicious file " + file + "? Y/N\n")
+        logging.info('User entered ' + answer)
         if answer.lower() == 'y':
             os.remove(dir)
+            logging.info('(' + file + ')' + " removed.")
             print("malicious file removed")
             error = False
             return error
@@ -82,6 +91,7 @@ def hash_file(dir):
 def usb_insertion_monitor():
     '''This function is responsible for detecting when a usb is inserted.'''
 
+    logging.info('Monitoring usb.')
     context = pyudev.Context()
 
     monitor = pyudev.Monitor.from_netlink(context)
@@ -94,6 +104,7 @@ def usb_insertion_monitor():
                 for p in psutil.disk_partitions(False):
                     if 'media' in p.mountpoint:
                         print(p.mountpoint)
+                        logging.info('usb connected at: ' + p.mountpoint + '.')
                         # Checks if the usb is safe
                         error = check(p.mountpoint)
                         flag = False
@@ -112,5 +123,6 @@ def eject_usb(mountpoint):
     cmd = "eject " + mountpoint
     os.system(cmd)
     print("Device was successfully ejected ")
+    logging.info('usb at ' + mountpoint + ' is ejected.')
 
 usb_insertion_monitor()

@@ -1,0 +1,17 @@
+INFO 2022-02-13 23:18:55,477 :: usb connected.
+INFO 2022-02-13 23:19:07,452 :: usb ejected.
+INFO 2022-02-13 23:19:07,452 :: usb connected.
+INFO 2022-02-13 23:28:53,013 :: Monitoring usb.
+INFO 2022-02-13 23:29:01,119 :: usb connected at: /media/loay/Kingstone.
+INFO 2022-02-13 23:29:01,152 :: Malicious file found (rufus-3.17.exe).
+INFO 2022-02-13 23:29:06,171 :: rufus-3.17.exe removed.
+INFO 2022-02-13 23:29:06,176 :: Malicious file found (tes3).
+INFO 2022-02-13 23:29:10,936 :: usb at /media/loay/Kingstone ejected.
+INFO 2022-02-13 23:32:15,892 :: Monitoring usb.
+INFO 2022-02-13 23:32:22,496 :: usb connected at: /media/loay/Kingstone.
+INFO 2022-02-13 23:32:22,505 :: Malicious file found (tes3).
+INFO 2022-02-13 23:32:24,369 :: User entered y
+INFO 2022-02-13 23:32:24,370 :: (tes3) removed.
+INFO 2022-02-13 23:32:24,370 :: Malicious file found (test4).
+INFO 2022-02-13 23:32:28,434 :: User entered n
+INFO 2022-02-13 23:32:28,508 :: usb at /media/loay/Kingstone is ejected.
